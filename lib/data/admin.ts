@@ -39,6 +39,24 @@ export async function getAdminRfqs(): Promise<RfqRecord[]> {
   }`)
 }
 
+export interface AdminInvoice {
+  id: string
+  invoiceNo: string
+  orderNo: string
+  issuedAt: string
+  total: number
+  status: 'paid' | 'unpaid' | 'overdue'
+  buyer: string | null
+}
+
+export async function getAdminInvoices(): Promise<AdminInvoice[]> {
+  await requireAdmin()
+  return client.fetch(`*[_type=="invoice"] | order(issuedAt desc){
+    "id": _id, "invoiceNo": invoiceNo, "orderNo": orderNo, "issuedAt": issuedAt,
+    total, status, "buyer": order->buyer->businessName
+  }`)
+}
+
 export interface AdminProduct {
   id: string
   name: string

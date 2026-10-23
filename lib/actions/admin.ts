@@ -112,6 +112,22 @@ export async function generateInvoiceForOrderAction(orderId: unknown): Promise<A
   }
 }
 
+// ---- Invoices ----
+const invoiceStatusSchema = z.enum(['paid', 'unpaid', 'overdue'])
+
+export async function setInvoiceStatusAction(id: unknown, status: unknown): Promise<AdminResult> {
+  try {
+    await requireAdmin()
+    const iid = idSchema.parse(id)
+    const st = invoiceStatusSchema.parse(status)
+    await getWriteClient().patch(iid).set({ status: st }).commit()
+    revalidatePath('/admin/invoices')
+    return { ok: true }
+  } catch {
+    return { ok: false, error: 'Could not update the invoice.' }
+  }
+}
+
 // ---- Inventory ----
 const stocksSchema = z.array(z.object({ key: z.string().min(1), stock: z.number().int().min(0) }))
 
