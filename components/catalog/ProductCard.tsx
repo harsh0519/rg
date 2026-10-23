@@ -4,7 +4,7 @@ import { formatINR, formatQty } from "@/lib/format";
 import type { ProductSummary } from "@/lib/types";
 
 // §9 ProductCard states: default · out of stock · MOQ badge · price hidden.
-export function ProductCard({ product }: { product: ProductSummary }) {
+export function ProductCard({ product, priority = false }: { product: ProductSummary; priority?: boolean }) {
   const priceHidden = product.from_price == null;
   return (
     <Link
@@ -17,6 +17,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
             src={product.thumbnail}
             alt={product.name}
             fill
+            priority={priority}
             sizes="(min-width: 640px) 33vw, 50vw"
             className={`object-cover transition-transform duration-500 group-hover:scale-[1.03] ${
               product.in_stock ? "" : "opacity-60 grayscale"

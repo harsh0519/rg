@@ -64,8 +64,8 @@ export function CatalogClient({ products }: { products: CatalogProduct[] }) {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3">
-              {shown.map((p) => (
-                <ProductCard key={p.id} product={p} />
+              {shown.map((p, i) => (
+                <ProductCard key={p.id} product={p} priority={i < 3} />
               ))}
             </div>
           )}
