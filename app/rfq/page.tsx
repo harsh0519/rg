@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { postRfq } from "@/lib/mockApi";
+import { submitRfq } from "@/lib/actions/forms";
 import { runSchema, required, validateEmail } from "@/lib/validation";
 import { useToast } from "@/components/ui/Toast";
 import { Field, TextArea } from "@/components/ui/Field";
@@ -17,7 +17,7 @@ export default function RfqPage() {
     details: "",
   });
   const [privateLabel, setPrivateLabel] = useState(false);
-  const [attachments, setAttachments] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -25,8 +25,7 @@ export default function RfqPage() {
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
 
   const onFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // upload is mocked — keep only the file names
-    setAttachments(Array.from(e.target.files ?? []).map((f) => f.name));
+    setFiles(Array.from(e.target.files ?? []));
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -42,7 +41,19 @@ export default function RfqPage() {
     if (Object.keys(errs).length) return;
     setBusy(true);
     try {
-      await postRfq({ ...form, private_label: privateLabel, attachments });
+      const fd = new FormData();
+      fd.set("business_name", form.business_name);
+      fd.set("contact", form.contact);
+      fd.set("product_interest", form.product_interest);
+      fd.set("quantities", form.quantities);
+      fd.set("details", form.details);
+      fd.set("private_label", String(privateLabel));
+      for (const file of files) fd.append("files", file);
+      const res = await submitRfq(fd);
+      if (!res.ok) {
+        toast(res.error, "error");
+        return;
+      }
       setDone(true);
     } finally {
       setBusy(false);
@@ -95,9 +106,9 @@ export default function RfqPage() {
         </label>
         <div className="sm:col-span-2">
           <span className="mb-1.5 block font-display text-small font-bold uppercase tracking-tight">Attachments</span>
-          <input type="file" multiple onChange={onFiles} className="font-serif text-small" />
-          {attachments.length > 0 && (
-            <p className="mt-1 font-serif text-small text-muted">{attachments.join(", ")}</p>
+          <input type="file" multiple onChange={onFiles} aria-label="Attachments" className="font-serif text-small" />
+          {files.length > 0 && (
+            <p className="mt-1 font-serif text-small text-muted">{files.map((f) => f.name).join(", ")}</p>
           )}
         </div>
         <div className="sm:col-span-2 mt-2">

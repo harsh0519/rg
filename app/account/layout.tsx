@@ -13,9 +13,9 @@ const TABS = [
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { me, loading } = useSession();
+  const { loggedIn, businessName, status } = useSession();
 
-  if (!loading && (!me || !me.logged_in)) {
+  if (!loggedIn) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-24 text-center sm:px-6">
         <h1 className="text-head">Log in to see your account</h1>
@@ -28,8 +28,8 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-head">{me?.business_name ?? "Your account"}</h1>
-          {me && <p className="mt-2"><BuyerStatusBadge status={me.status} /></p>}
+          <h1 className="text-head">{businessName ?? "Your account"}</h1>
+          {status && <p className="mt-2"><BuyerStatusBadge status={status} /></p>}
         </div>
       </header>
 

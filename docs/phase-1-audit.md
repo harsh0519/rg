@@ -84,7 +84,7 @@ Both scripts currently pass (exit 0).
 1. **Backend: Sanity via `next-sanity@13.3.4`** — peers `next ^16`, `react ^19.2.3`, `sanity ^6`; matches our Next 16.4.2 / React 19.3 → ✅ no blocker. Studio embedded at `/studio`.
 2. **Config → Sanity `siteSettings` singleton** — `GST_RATE`, `SELLER_STATE`, `MIN_ORDER_VALUE`, default tier config, brand/GSTIN/contact become business-editable; the pure `lib/pricing` functions keep taking them as params (unchanged).
 3. **Price gating server-side** — GROQ projections omit price fields unless the server session is `approved`; `PRICE_LISTS` resolve server-side so price data never reaches an anonymous/unapproved client.
-4. **Cart = signed httpOnly cookie holding only `{variantId, qty}`** (no prices), server recomputes pricing/GST/min-order on every read. *Deviation from the brief's "per-buyer Sanity cart" — justification:* avoids a Sanity write per keystroke (cost/rate-limit) and keeps prices entirely off the client; merges into the buyer context at login. Will confirm with you.
+4. **Cart = signed httpOnly cookie holding only `{variantId, qty}`** (no prices), server recomputes pricing/GST/min-order on every read. *Deviation from the brief's "per-buyer Sanity cart" — justification:* avoids a Sanity write per keystroke (cost/rate-limit) and keeps prices entirely off the client; merges into the buyer context at login. **✅ Confirmed by stakeholder (2026-10-23).**
 5. **Auth = Auth.js (NextAuth v5) credentials** backed by `buyer` docs, argon2id hashes, httpOnly cookies, CSRF, login rate-limit. *Risk:* v5 is beta and Next-16 support is bleeding-edge — if incompatible in Phase 4, fall back to a minimal custom credentials + iron-session cookie (same security properties). Add **`role: 'admin'|'buyer'`** to the user doc (no role concept exists today).
 6. **Order/invoice numbers** — Sanity singleton counter per financial year, incremented in a server action via `patch(...).ifRevisionId(rev)` with retry on 409. Format `RG/25-26/0001`.
 7. **Images** — `next/image` + `@sanity/image-url`, `remotePatterns` for `cdn.sanity.io`, LQIP blur; replace raw `<img>` in `ProductCard`/`ProductView`.
@@ -106,3 +106,25 @@ browser OAuth — I can't do it headless). To start Phase 2 live I need **one** 
 
 Deferrable (not Phase-2 blockers): Resend key (Phase 5 — dev uses a console transport), Sentry DSN
 (Phase 6), Vercel (Phase 8). GitHub remote already exists (`harsh0519/rg`).
+
+### Status: HOLDING for credentials (2026-10-23)
+Phase 2 will not start until the stakeholder provides the Sanity project. **Exactly what is needed:**
+
+1. A Sanity account + project (free tier is fine). Create at <https://www.sanity.io/manage> →
+   *Create new project* → name **"RG Enterprises"**, create dataset **`production`**
+   (keep it **private**; catalog reads use a server read token).
+2. In the project → **API → Tokens → Add API token**, create two and copy each (shown once):
+   - `rg-read` with **Viewer** permission
+   - `rg-write` with **Editor** permission
+3. Put the secrets in **`.env.local`** yourself (do **not** paste tokens in chat). Template:
+   ```
+   NEXT_PUBLIC_SANITY_PROJECT_ID=<your project id>   # not secret
+   NEXT_PUBLIC_SANITY_DATASET=production              # not secret
+   SANITY_API_READ_TOKEN=<rg-read token>              # secret — server only
+   SANITY_API_WRITE_TOKEN=<rg-write token>            # secret — server only
+   ```
+4. Tell me in chat only the **non-secret** values — `projectId` and `dataset` — and confirm the two
+   tokens are in `.env.local`. Scripts read tokens from the env; I never need to see their values.
+
+Alternative if you prefer the CLI: `npx sanity@latest login` then `npx sanity@latest init` from the
+repo root (choose *Create new project*), which prints the projectId; still create the two tokens as above.

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { formatINR, formatQty } from "@/lib/format";
 import type { ProductSummary } from "@/lib/types";
 
@@ -11,17 +12,17 @@ export function ProductCard({ product }: { product: ProductSummary }) {
       className="group flex flex-col gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-surface">
-        {/* plain img: lazy with fixed aspect ratio (doc §7 performance) */}
-        <img
-          src={product.thumbnail}
-          alt={product.name}
-          loading="lazy"
-          width={600}
-          height={750}
-          className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] ${
-            product.in_stock ? "" : "opacity-60 grayscale"
-          }`}
-        />
+        {product.thumbnail && (
+          <Image
+            src={product.thumbnail}
+            alt={product.name}
+            fill
+            sizes="(min-width: 640px) 33vw, 50vw"
+            className={`object-cover transition-transform duration-500 group-hover:scale-[1.03] ${
+              product.in_stock ? "" : "opacity-60 grayscale"
+            }`}
+          />
+        )}
         <span className="absolute left-0 top-0 bg-ink px-2.5 py-1 font-display text-small font-bold uppercase tracking-tight text-bg">
           MOQ {formatQty(product.moq)}
         </span>

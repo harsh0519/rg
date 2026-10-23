@@ -1,14 +1,8 @@
 "use client";
 
-import type { ProductFilters } from "@/lib/mockApi";
+import type { ProductFilters, FilterOptions } from "@/lib/catalog-filters";
 
-export interface FilterOptions {
-  categories: string[];
-  fabrics: string[];
-  colors: string[];
-  sizes: string[];
-  tiers: string[];
-}
+export type { FilterOptions };
 
 // Catalog filters (doc §3.2). Rendered in a desktop sidebar and inside the mobile
 // drawer (§9 Filters: desktop sidebar · mobile drawer) — same controlled component.

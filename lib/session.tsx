@@ -1,64 +1,39 @@
 "use client";
 
-// Session context: loads GET /me once and exposes it to the whole app so every
-// surface can gate prices/cart consistently (doc §7 "price gating UI").
+// Client session context. The value is resolved server-side (from the auth cookie) in the root
+// layout and passed down, so the client never reads/forges identity.
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { getMe, setViewStatus } from "./mockApi";
-import type { BuyerStatus, Me } from "./types";
+import { createContext, useContext } from "react";
+import type { BuyerStatus, PaymentTerms, StateCode } from "./types";
 
-interface SessionValue {
-  me: Me | null;
-  loading: boolean;
+export interface ClientSession {
+  loggedIn: boolean;
+  id: string | null;
+  businessName: string | null;
+  status: BuyerStatus | null;
   approved: boolean;
-  refresh: () => Promise<void>;
-  changeStatus: (status: BuyerStatus) => Promise<void>; // dev switcher
+  state: StateCode | null;
+  paymentTerms: PaymentTerms[];
+  creditLimit: number;
 }
 
-const SessionContext = createContext<SessionValue | null>(null);
+const EMPTY: ClientSession = {
+  loggedIn: false,
+  id: null,
+  businessName: null,
+  status: null,
+  approved: false,
+  state: null,
+  paymentTerms: [],
+  creditLimit: 0,
+};
 
-export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [me, setMe] = useState<Me | null>(null);
-  const [loading, setLoading] = useState(true);
+const SessionContext = createContext<ClientSession>(EMPTY);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setMe(await getMe());
-    setLoading(false);
-  }, []);
-
-  const changeStatus = useCallback(
-    async (status: BuyerStatus) => {
-      setViewStatus(status);
-      await refresh();
-    },
-    [refresh],
-  );
-
-  useEffect(() => {
-    // initial load — state updates only in the async continuation, never synchronously
-    let active = true;
-    getMe().then((m) => {
-      if (!active) return;
-      setMe(m);
-      setLoading(false);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const approved = !!me && me.logged_in && me.status === "approved";
-
-  return (
-    <SessionContext.Provider value={{ me, loading, approved, refresh, changeStatus }}>
-      {children}
-    </SessionContext.Provider>
-  );
+export function SessionProvider({ value, children }: { value: ClientSession; children: React.ReactNode }) {
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
-export function useSession(): SessionValue {
-  const ctx = useContext(SessionContext);
-  if (!ctx) throw new Error("useSession must be used within <SessionProvider>");
-  return ctx;
+export function useSession(): ClientSession {
+  return useContext(SessionContext);
 }

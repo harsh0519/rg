@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { applyBuyer } from "@/lib/mockApi";
+import { submitApplication } from "@/lib/actions/forms";
 import {
   runSchema,
   required,
@@ -26,6 +26,7 @@ const EMPTY = {
   pincode: "",
   state: "",
   business_type: "retailer" as BuyerApplication["business_type"],
+  password: "",
 };
 
 export default function ApplyPage() {
@@ -33,6 +34,7 @@ export default function ApplyPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [formError, setFormError] = useState("");
   const loaded = useRef(false);
 
   // load draft once
@@ -49,7 +51,8 @@ export default function ApplyPage() {
   // autosave draft (doc §7: draft autosave on the apply form) — side effect only
   useEffect(() => {
     if (!loaded.current) return;
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    // never persist the password to the draft
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...form, password: "" }));
   }, [form]);
 
   if (done) {
@@ -78,13 +81,19 @@ export default function ApplyPage() {
       address: required("Address"),
       pincode: validatePincode,
       state: required("State"),
+      password: (v) => (v.length >= 8 ? null : "At least 8 characters"),
     });
     setErrors(errs);
     if (Object.keys(errs).length) return;
 
     setSubmitting(true);
+    setFormError("");
     try {
-      await applyBuyer({ ...form, gstin: form.gstin.toUpperCase() });
+      const res = await submitApplication({ ...form, gstin: form.gstin.toUpperCase() });
+      if (!res.ok) {
+        setFormError(res.error);
+        return;
+      }
       localStorage.removeItem(DRAFT_KEY);
       setDone(true);
     } finally {
@@ -121,7 +130,13 @@ export default function ApplyPage() {
             <option value="other">Other</option>
           </SelectField>
         </div>
+        <div className="sm:col-span-2">
+          <Field id="password" label="Create a password" type="password" hint="At least 8 characters — to log in once approved" value={form.password} error={errors.password} onChange={(e) => set({ password: e.target.value })} />
+        </div>
 
+        {formError && (
+          <p className="sm:col-span-2 font-serif text-small text-danger">{formError}</p>
+        )}
         <div className="sm:col-span-2 mt-2 flex items-center justify-between gap-4">
           <span className="font-serif text-small text-muted">Your progress autosaves</span>
           <Button type="submit" size="lg" disabled={submitting}>
@@ -131,7 +146,7 @@ export default function ApplyPage() {
       </form>
 
       <p className="mt-6 font-serif text-small text-muted">
-        Already approved? <a href="/login" className="text-accent hover:underline">Log in</a>.
+        Already approved? <a href="/login" className="text-accent underline">Log in</a>.
       </p>
     </div>
   );

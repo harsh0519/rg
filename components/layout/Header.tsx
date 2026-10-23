@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useSession } from "@/lib/session";
 import { useCart } from "@/lib/cart";
+import { logout } from "@/lib/actions/auth";
 import { BuyerStatusBadge } from "@/components/ui/BuyerStatusBadge";
 import { ButtonLink } from "@/components/ui/Button";
 
 // Plain bar: wordmark, a few links, one action (taste: no glass, no chrome).
 export function Header() {
-  const { me, loading, approved } = useSession();
+  const { loggedIn, status, approved } = useSession();
   const { count } = useCart();
 
   return (
@@ -30,12 +31,17 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          {!loading && me && me.logged_in ? (
+          {loggedIn ? (
             <>
-              <span className="hidden sm:inline"><BuyerStatusBadge status={me.status} /></span>
-              {!approved && (
-                <ButtonLink href="/apply" size="md">Finish application</ButtonLink>
-              )}
+              {status && <span className="hidden sm:inline"><BuyerStatusBadge status={status} /></span>}
+              <form action={logout}>
+                <button
+                  type="submit"
+                  className="font-display text-small font-bold uppercase tracking-tight hover:text-accent"
+                >
+                  Log out
+                </button>
+              </form>
             </>
           ) : (
             <>

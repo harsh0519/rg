@@ -2,24 +2,29 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/session";
+import { login } from "@/lib/actions/auth";
 import { Field } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 
-// Mock login: there is no real auth backend, so signing in puts the session into the
-// approved demo buyer. The dev "View as" switcher in the footer covers other statuses.
 export default function LoginPage() {
   const router = useRouter();
-  const { changeStatus } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    await changeStatus("approved");
+    setError("");
+    const res = await login({ email, password });
+    if (!res.ok) {
+      setError(res.error);
+      setBusy(false);
+      return;
+    }
     router.push("/catalog");
+    router.refresh();
   };
 
   return (
@@ -30,13 +35,14 @@ export default function LoginPage() {
       <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
         <Field id="email" label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <Field id="password" label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        {error && <p className="font-serif text-small text-danger">{error}</p>}
         <Button type="submit" size="lg" disabled={busy} className="mt-2">
           {busy ? "Signing in…" : "Log in"}
         </Button>
       </form>
 
       <p className="mt-6 font-serif text-small text-muted">
-        No account yet? <a href="/apply" className="text-accent hover:underline">Apply to buy</a>.
+        No account yet? <a href="/apply" className="text-accent underline">Apply to buy</a>.
       </p>
     </div>
   );

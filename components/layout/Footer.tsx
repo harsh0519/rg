@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { StatusSwitcher } from "./StatusSwitcher";
 
 // Footer as "the back of the object": name first, places under it (direction §7.6),
 // on the deep leaf-green field. Wordmark cropped at the bottom edge (not the top —
@@ -28,7 +27,6 @@ export function Footer() {
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-field-ink/20 py-6 text-small text-field-ink/70">
           {/* shortcut: static year, bump or wire to a date util when it matters */}
           <span>© 2026 RG Enterprises · GSTIN 27XXXXX0000X1Z5 · Maharashtra, India</span>
-          <StatusSwitcher />
         </div>
       </div>
 

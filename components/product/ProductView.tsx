@@ -2,10 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PRICE_LISTS } from "@/lib/fixtures";
+import Image from "next/image";
 import { resolveUnitPrice } from "@/lib/pricing";
 import { formatINR, formatQty } from "@/lib/format";
-import { useSession } from "@/lib/session";
 import { useCart } from "@/lib/cart";
 import { useToast } from "@/components/ui/Toast";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -13,8 +12,17 @@ import { TierPriceTable } from "./TierPriceTable";
 import { OrderMatrix, type Quantities } from "./OrderMatrix";
 import type { ProductDetail, SizeRunPack } from "@/lib/types";
 
-export function ProductView({ product }: { product: ProductDetail }) {
-  const { me, approved } = useSession();
+// `approved` and `buyerPrice` are resolved server-side (price gating + buyer price list) and
+// passed in — the view no longer reads the mock session or the PRICE_LISTS fixture.
+export function ProductView({
+  product,
+  approved,
+  buyerPrice = null,
+}: {
+  product: ProductDetail;
+  approved: boolean;
+  buyerPrice?: number | null;
+}) {
   const { add } = useCart();
   const toast = useToast();
   const router = useRouter();
@@ -24,15 +32,7 @@ export function ProductView({ product }: { product: ProductDetail }) {
   const [packColor, setPackColor] = useState(product.colors[0] ?? "");
   const [adding, setAdding] = useState(false);
 
-  const buyerPrice =
-    me?.price_list_id && PRICE_LISTS[me.price_list_id]
-      ? PRICE_LISTS[me.price_list_id][product.id] ?? null
-      : null;
-
-  const totalQty = useMemo(
-    () => Object.values(quantities).reduce((s, q) => s + q, 0),
-    [quantities],
-  );
+  const totalQty = useMemo(() => Object.values(quantities).reduce((s, q) => s + q, 0), [quantities]);
 
   const unitPrice = approved
     ? resolveUnitPrice(product.price_tiers, product.base_price, totalQty, buyerPrice)
@@ -71,19 +71,24 @@ export function ProductView({ product }: { product: ProductDetail }) {
     }
   };
 
+  const mainImage = product.images[activeImage] ?? product.thumbnail;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <div className="grid gap-10 lg:grid-cols-2">
         {/* Gallery */}
         <div>
-          <div className="aspect-[4/5] overflow-hidden bg-surface">
-            <img
-              src={product.images[activeImage] ?? product.thumbnail}
-              alt={product.name}
-              width={1200}
-              height={1500}
-              className="h-full w-full object-cover"
-            />
+          <div className="relative aspect-[4/5] overflow-hidden bg-surface">
+            {mainImage && (
+              <Image
+                src={mainImage}
+                alt={product.name}
+                fill
+                priority
+                sizes="(min-width: 1024px) 40vw, 90vw"
+                className="object-cover"
+              />
+            )}
           </div>
           {product.images.length > 1 && (
             <div className="mt-3 flex gap-3">
@@ -91,10 +96,10 @@ export function ProductView({ product }: { product: ProductDetail }) {
                 <button
                   key={img}
                   onClick={() => setActiveImage(i)}
-                  className={`h-20 w-16 overflow-hidden bg-surface ${i === activeImage ? "ring-2 ring-accent" : ""}`}
+                  className={`relative h-20 w-16 overflow-hidden bg-surface ${i === activeImage ? "ring-2 ring-accent" : ""}`}
                   aria-label={`View image ${i + 1}`}
                 >
-                  <img src={img} alt="" width={160} height={200} className="h-full w-full object-cover" />
+                  <Image src={img} alt="" fill sizes="64px" className="object-cover" />
                 </button>
               ))}
             </div>

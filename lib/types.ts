@@ -1,5 +1,4 @@
-// API contract types (doc §5). The mock layer in mockApi.ts implements these so a
-// real backend can be swapped in without touching callers.
+// API contract types (doc §5). The data layer (lib/data, lib/sanity) produces these DTOs.
 
 export type BuyerStatus = "pending" | "approved" | "rejected" | "suspended";
 export type PaymentTerms = "advance" | "cod" | "credit";
